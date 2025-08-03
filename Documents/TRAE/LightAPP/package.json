@@ -1,0 +1,72 @@
+{
+  "name": "lightiptv-player",
+  "version": "1.0.0",
+  "description": "LightIPTV Player - Desktop IPTV Player Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-packager . --platform=win32 --arch=x64 --out=dist --overwrite",
+    "build-win": "electron-packager . --platform=win32 --arch=x64 --out=dist --overwrite",
+    "installer": "electron-builder --win --publish=never",
+    "dist": "electron-packager . --platform=win32 --arch=x64 --out=dist --overwrite",
+    "pack": "electron-packager . --platform=win32 --arch=x64 --out=dist --overwrite"
+  },
+  "keywords": [
+    "iptv",
+    "player",
+    "streaming",
+    "electron",
+    "desktop"
+  ],
+  "author": "LightIPTV",
+  "license": "MIT",
+  "dependencies": {
+    "electron-updater": "^6.1.4"
+  },
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4",
+    "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.lightiptv.player",
+    "productName": "LightIPTV Player",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*",
+      "!dist/**/*",
+      "!.git/**/*",
+      "!build-icon.js"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "LightIPTV Player",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "deleteAppDataOnUninstall": false
+    },
+    "compression": "normal",
+    "nodeGypRebuild": false,
+    "buildDependenciesFromSource": false
+  }
+}
