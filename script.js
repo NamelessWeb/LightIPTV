@@ -863,39 +863,22 @@ class LightIPTV {
             const categoriesResponse = await this.fetchWithTimeout(url);
             const categories = await categoriesResponse.json();
             
-            // Update progress - categories loaded (25%)
-            this.updateProgress('live', 1, 4, 'loading');
+            // Update progress - categories loaded
+            this.updateProgress('live', categories.length, categories.length + 1, 'loading');
             
             // Load channels
             const channelsUrl = `${this.apiCredentials.server}/player_api.php?username=${this.apiCredentials.username}&password=${this.apiCredentials.password}&action=get_live_streams`;
             const channelsResponse = await this.fetchWithTimeout(channelsUrl);
             const channels = await channelsResponse.json();
             
-            // Update progress - channels loaded (50%)
-            this.updateProgress('live', 2, 4, 'loading');
-            
-            // Set total count for real-time tracking
-            this.updateProgress('live', 2, 4 + channels.length, 'loading');
-            
-            // Process channels with progress tracking
-            let processedCount = 0;
-            const batchSize = Math.max(1, Math.floor(channels.length / 20)); // Update every 5%
-            
-            for (let i = 0; i < channels.length; i++) {
-                // Simulate processing time for demonstration
-                if (i % batchSize === 0 || i === channels.length - 1) {
-                    processedCount = i + 1;
-                    this.updateProgress('live', 2 + processedCount, 4 + channels.length, 'loading');
-                    // Small delay to show progress
-                    await new Promise(resolve => setTimeout(resolve, 10));
-                }
-            }
+            // Set total count and show real channel numbers
+            this.updateProgress('live', channels.length, channels.length, 'loading');
             
             // Group channels by category
             const groupedChannels = this.groupByCategory(channels, categories, 'category_id');
             this.currentData.live = groupedChannels;
             
-            // Mark as completed
+            // Mark as completed with actual channel count
             this.updateProgress('live', channels.length, channels.length, 'completed');
             this.setProgressStatus('live', 'completed');
             
@@ -915,35 +898,20 @@ class LightIPTV {
             const categories = await categoriesResponse.json();
             
             // Update progress - categories loaded
-            this.updateProgress('movies', 1, 4, 'loading');
+            this.updateProgress('movies', categories.length, categories.length + 1, 'loading');
             
             // Load movies
             const moviesUrl = `${this.apiCredentials.server}/player_api.php?username=${this.apiCredentials.username}&password=${this.apiCredentials.password}&action=get_vod_streams`;
             const moviesResponse = await this.fetchWithTimeout(moviesUrl);
             const movies = await moviesResponse.json();
             
-            // Update progress - movies loaded
-            this.updateProgress('movies', 2, 4, 'loading');
-            
-            // Set total count for real-time tracking
-            this.updateProgress('movies', 2, 4 + movies.length, 'loading');
-            
-            // Process movies with progress tracking
-            let processedCount = 0;
-            const batchSize = Math.max(1, Math.floor(movies.length / 20));
-            
-            for (let i = 0; i < movies.length; i++) {
-                if (i % batchSize === 0 || i === movies.length - 1) {
-                    processedCount = i + 1;
-                    this.updateProgress('movies', 2 + processedCount, 4 + movies.length, 'loading');
-                    await new Promise(resolve => setTimeout(resolve, 5));
-                }
-            }
+            // Set total count and show real movie numbers
+            this.updateProgress('movies', movies.length, movies.length, 'loading');
             
             const groupedMovies = this.groupByCategory(movies, categories, 'category_id');
             this.currentData.movies = groupedMovies;
             
-            // Mark as completed
+            // Mark as completed with actual movie count
             this.updateProgress('movies', movies.length, movies.length, 'completed');
             this.setProgressStatus('movies', 'completed');
             
@@ -964,35 +932,20 @@ class LightIPTV {
             const categories = await categoriesResponse.json();
             
             // Update progress - categories loaded
-            this.updateProgress('series', 1, 4, 'loading');
+            this.updateProgress('series', categories.length, categories.length + 1, 'loading');
             
             // Load series
             const seriesUrl = `${this.apiCredentials.server}/player_api.php?username=${this.apiCredentials.username}&password=${this.apiCredentials.password}&action=get_series`;
             const seriesResponse = await this.fetchWithTimeout(seriesUrl);
             const series = await seriesResponse.json();
             
-            // Update progress - series loaded
-            this.updateProgress('series', 2, 4, 'loading');
-            
-            // Set total count for real-time tracking
-            this.updateProgress('series', 2, 4 + series.length, 'loading');
-            
-            // Process series with progress tracking
-            let processedCount = 0;
-            const batchSize = Math.max(1, Math.floor(series.length / 20));
-            
-            for (let i = 0; i < series.length; i++) {
-                if (i % batchSize === 0 || i === series.length - 1) {
-                    processedCount = i + 1;
-                    this.updateProgress('series', 2 + processedCount, 4 + series.length, 'loading');
-                    await new Promise(resolve => setTimeout(resolve, 5));
-                }
-            }
+            // Set total count and show real series numbers
+            this.updateProgress('series', series.length, series.length, 'loading');
             
             const groupedSeries = this.groupByCategory(series, categories, 'category_id');
             this.currentData.series = groupedSeries;
             
-            // Mark as completed
+            // Mark as completed with actual series count
             this.updateProgress('series', series.length, series.length, 'completed');
             this.setProgressStatus('series', 'completed');
             
@@ -2116,17 +2069,51 @@ class LightIPTV {
         const timeoutId = setTimeout(() => controller.abort(), timeout);
         
         try {
-            // Use CORS proxy for HTTP requests when site is HTTPS
-            const finalUrl = this.shouldUseProxy(url) ? this.getProxyUrl(url) : url;
+            let finalUrl = url;
+            let lastError = null;
             
-            const response = await fetch(finalUrl, {
-                signal: controller.signal,
-                headers: {
-                    'Accept': 'application/json',
+            // If we need to use proxy, try multiple proxy services
+            if (this.shouldUseProxy(url)) {
+                const proxyServices = [
+                    'https://corsproxy.io/?',
+                    'https://cors-proxy.htmldriven.com/?url=',
+                    'https://api.codetabs.com/v1/proxy?quest=',
+                    'https://thingproxy.freeboard.io/fetch/'
+                ];
+                
+                for (let i = 0; i < proxyServices.length; i++) {
+                    try {
+                        finalUrl = proxyServices[i] + encodeURIComponent(url);
+                        const response = await fetch(finalUrl, {
+                            signal: controller.signal,
+                            headers: {
+                                'Accept': 'application/json',
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            clearTimeout(timeoutId);
+                            return response;
+                        }
+                        throw new Error(`HTTP ${response.status}`);
+                    } catch (error) {
+                        lastError = error;
+                        console.warn(`Proxy ${i + 1} failed:`, error.message);
+                        if (i === proxyServices.length - 1) {
+                            throw new Error(`All proxy services failed. Last error: ${error.message}`);
+                        }
+                    }
                 }
-            });
-            clearTimeout(timeoutId);
-            return response;
+            } else {
+                const response = await fetch(finalUrl, {
+                    signal: controller.signal,
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+                clearTimeout(timeoutId);
+                return response;
+            }
         } catch (error) {
             clearTimeout(timeoutId);
             if (error.name === 'AbortError') {
@@ -2142,16 +2129,21 @@ class LightIPTV {
     }
 
     getProxyUrl(url) {
-        // Use a reliable CORS proxy service
-        // Alternative proxies: 'https://api.allorigins.win/raw?url=', 'https://cors-anywhere.herokuapp.com/'
+        // Use more reliable CORS proxy services with fallback
         const proxyServices = [
+            'https://corsproxy.io/?',
+            'https://cors-proxy.htmldriven.com/?url=',
             'https://api.codetabs.com/v1/proxy?quest=',
-            'https://api.allorigins.win/raw?url=',
-            'https://corsproxy.io/?'
+            'https://thingproxy.freeboard.io/fetch/'
         ];
         
-        // Try different proxy services for reliability
-        const proxyIndex = Math.floor(Math.random() * proxyServices.length);
+        // Use a deterministic approach based on URL to ensure consistency
+        const urlHash = url.split('').reduce((a, b) => {
+            a = ((a << 5) - a) + b.charCodeAt(0);
+            return a & a;
+        }, 0);
+        const proxyIndex = Math.abs(urlHash) % proxyServices.length;
+        
         return proxyServices[proxyIndex] + encodeURIComponent(url);
     }
 
