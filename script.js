@@ -35,6 +35,12 @@ class LightIPTV {
         this.currentSubtitle = null;
         this.subtitleOffset = 0; // Offset in milliseconds
         this.currentChannel = null;
+        this.progressTracking = {
+            live: { current: 0, total: 0, status: 'waiting' },
+            movies: { current: 0, total: 0, status: 'waiting' },
+            series: { current: 0, total: 0, status: 'waiting' },
+            overall: { current: 0, total: 3 }
+        };
         this.loadFavorites();
         this.loadCachedData();
         this.init();
@@ -821,7 +827,7 @@ class LightIPTV {
             }
             
             console.log('Loading fresh data from API');
-            this.showLoadingScreen('Loading content...');
+            this.showLoadingScreen('Loading content...', true);
             
             this.updateLoadingStatus('Loading live channels...');
             await this.loadLiveChannels();
@@ -849,52 +855,151 @@ class LightIPTV {
     }
 
     async loadLiveChannels() {
-        const url = `${this.apiCredentials.server}/player_api.php?username=${this.apiCredentials.username}&password=${this.apiCredentials.password}&action=get_live_categories`;
-        const categoriesResponse = await this.fetchWithTimeout(url);
-        const categories = await categoriesResponse.json();
-
-        const channelsUrl = `${this.apiCredentials.server}/player_api.php?username=${this.apiCredentials.username}&password=${this.apiCredentials.password}&action=get_live_streams`;
-        const channelsResponse = await this.fetchWithTimeout(channelsUrl);
-        const channels = await channelsResponse.json();
-
-        // Group channels by category
-        const groupedChannels = this.groupByCategory(channels, categories, 'category_id');
-        this.currentData.live = groupedChannels;
+        this.setProgressStatus('live', 'loading');
+        
+        try {
+            // Load categories first
+            const url = `${this.apiCredentials.server}/player_api.php?username=${this.apiCredentials.username}&password=${this.apiCredentials.password}&action=get_live_categories`;
+            const categoriesResponse = await this.fetchWithTimeout(url);
+            const categories = await categoriesResponse.json();
+            
+            // Update progress - categories loaded (25%)
+            this.updateProgress('live', 1, 4, 'loading');
+            
+            // Load channels
+            const channelsUrl = `${this.apiCredentials.server}/player_api.php?username=${this.apiCredentials.username}&password=${this.apiCredentials.password}&action=get_live_streams`;
+            const channelsResponse = await this.fetchWithTimeout(channelsUrl);
+            const channels = await channelsResponse.json();
+            
+            // Update progress - channels loaded (50%)
+            this.updateProgress('live', 2, 4, 'loading');
+            
+            // Set total count for real-time tracking
+            this.updateProgress('live', 2, 4 + channels.length, 'loading');
+            
+            // Process channels with progress tracking
+            let processedCount = 0;
+            const batchSize = Math.max(1, Math.floor(channels.length / 20)); // Update every 5%
+            
+            for (let i = 0; i < channels.length; i++) {
+                // Simulate processing time for demonstration
+                if (i % batchSize === 0 || i === channels.length - 1) {
+                    processedCount = i + 1;
+                    this.updateProgress('live', 2 + processedCount, 4 + channels.length, 'loading');
+                    // Small delay to show progress
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+            }
+            
+            // Group channels by category
+            const groupedChannels = this.groupByCategory(channels, categories, 'category_id');
+            this.currentData.live = groupedChannels;
+            
+            // Mark as completed
+            this.updateProgress('live', channels.length, channels.length, 'completed');
+            this.setProgressStatus('live', 'completed');
+            
+        } catch (error) {
+            this.setProgressStatus('live', 'error');
+            throw error;
+        }
     }
 
     async loadMovies() {
+        this.setProgressStatus('movies', 'loading');
+        
         try {
+            // Load categories first
             const url = `${this.apiCredentials.server}/player_api.php?username=${this.apiCredentials.username}&password=${this.apiCredentials.password}&action=get_vod_categories`;
             const categoriesResponse = await this.fetchWithTimeout(url);
             const categories = await categoriesResponse.json();
-
+            
+            // Update progress - categories loaded
+            this.updateProgress('movies', 1, 4, 'loading');
+            
+            // Load movies
             const moviesUrl = `${this.apiCredentials.server}/player_api.php?username=${this.apiCredentials.username}&password=${this.apiCredentials.password}&action=get_vod_streams`;
             const moviesResponse = await this.fetchWithTimeout(moviesUrl);
             const movies = await moviesResponse.json();
-
+            
+            // Update progress - movies loaded
+            this.updateProgress('movies', 2, 4, 'loading');
+            
+            // Set total count for real-time tracking
+            this.updateProgress('movies', 2, 4 + movies.length, 'loading');
+            
+            // Process movies with progress tracking
+            let processedCount = 0;
+            const batchSize = Math.max(1, Math.floor(movies.length / 20));
+            
+            for (let i = 0; i < movies.length; i++) {
+                if (i % batchSize === 0 || i === movies.length - 1) {
+                    processedCount = i + 1;
+                    this.updateProgress('movies', 2 + processedCount, 4 + movies.length, 'loading');
+                    await new Promise(resolve => setTimeout(resolve, 5));
+                }
+            }
+            
             const groupedMovies = this.groupByCategory(movies, categories, 'category_id');
             this.currentData.movies = groupedMovies;
+            
+            // Mark as completed
+            this.updateProgress('movies', movies.length, movies.length, 'completed');
+            this.setProgressStatus('movies', 'completed');
+            
         } catch (error) {
             console.warn('Movies not available:', error);
             this.currentData.movies = [];
+            this.setProgressStatus('movies', 'error');
         }
     }
 
     async loadSeries() {
+        this.setProgressStatus('series', 'loading');
+        
         try {
+            // Load categories first
             const url = `${this.apiCredentials.server}/player_api.php?username=${this.apiCredentials.username}&password=${this.apiCredentials.password}&action=get_series_categories`;
             const categoriesResponse = await this.fetchWithTimeout(url);
             const categories = await categoriesResponse.json();
-
+            
+            // Update progress - categories loaded
+            this.updateProgress('series', 1, 4, 'loading');
+            
+            // Load series
             const seriesUrl = `${this.apiCredentials.server}/player_api.php?username=${this.apiCredentials.username}&password=${this.apiCredentials.password}&action=get_series`;
             const seriesResponse = await this.fetchWithTimeout(seriesUrl);
             const series = await seriesResponse.json();
-
+            
+            // Update progress - series loaded
+            this.updateProgress('series', 2, 4, 'loading');
+            
+            // Set total count for real-time tracking
+            this.updateProgress('series', 2, 4 + series.length, 'loading');
+            
+            // Process series with progress tracking
+            let processedCount = 0;
+            const batchSize = Math.max(1, Math.floor(series.length / 20));
+            
+            for (let i = 0; i < series.length; i++) {
+                if (i % batchSize === 0 || i === series.length - 1) {
+                    processedCount = i + 1;
+                    this.updateProgress('series', 2 + processedCount, 4 + series.length, 'loading');
+                    await new Promise(resolve => setTimeout(resolve, 5));
+                }
+            }
+            
             const groupedSeries = this.groupByCategory(series, categories, 'category_id');
             this.currentData.series = groupedSeries;
+            
+            // Mark as completed
+            this.updateProgress('series', series.length, series.length, 'completed');
+            this.setProgressStatus('series', 'completed');
+            
         } catch (error) {
             console.warn('Series not available:', error);
             this.currentData.series = [];
+            this.setProgressStatus('series', 'error');
         }
     }
 
@@ -1414,10 +1519,18 @@ class LightIPTV {
         this.setViewMode(savedViewMode);
     }
 
-    showLoadingScreen(message) {
+    showLoadingScreen(message, showProgress = false) {
         this.hideAllScreens();
         document.getElementById('loadingScreen').classList.add('active');
         this.updateLoadingStatus(message);
+        
+        const progressDetails = document.getElementById('progressDetails');
+        if (showProgress) {
+            progressDetails.style.display = 'block';
+            this.resetProgressTracking();
+        } else {
+            progressDetails.style.display = 'none';
+        }
     }
 
     hideAllScreens() {
@@ -1430,6 +1543,74 @@ class LightIPTV {
         const statusElement = document.getElementById('loadingStatus');
         if (statusElement) {
             statusElement.textContent = message;
+        }
+    }
+
+    resetProgressTracking() {
+        this.progressTracking = {
+            live: { current: 0, total: 0, status: 'waiting' },
+            movies: { current: 0, total: 0, status: 'waiting' },
+            series: { current: 0, total: 0, status: 'waiting' },
+            overall: { current: 0, total: 3 }
+        };
+        this.updateProgressDisplay();
+    }
+
+    updateProgressDisplay() {
+        // Update individual progress bars
+        ['live', 'movies', 'series'].forEach(type => {
+            const progress = this.progressTracking[type];
+            const percentage = progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
+            
+            // Update count
+            document.getElementById(`${type}Count`).textContent = `${progress.current} / ${progress.total}`;
+            
+            // Update progress bar
+            document.getElementById(`${type}ProgressFill`).style.width = `${percentage}%`;
+            
+            // Update status
+            const statusText = this.getStatusText(progress.status, progress.current, progress.total);
+            document.getElementById(`${type}Status`).textContent = statusText;
+            
+            // Update item styling
+            const item = document.getElementById(`${type}Progress`);
+            item.className = `progress-item ${progress.status}`;
+        });
+        
+        // Update overall progress
+        const overallPercentage = (this.progressTracking.overall.current / this.progressTracking.overall.total) * 100;
+        document.getElementById('overallCount').textContent = `${this.progressTracking.overall.current} / ${this.progressTracking.overall.total}`;
+        document.getElementById('overallProgressFill').style.width = `${overallPercentage}%`;
+    }
+
+    getStatusText(status, current, total) {
+        switch (status) {
+            case 'waiting': return 'Waiting...';
+            case 'loading': return 'Loading...';
+            case 'completed': return `Completed (${current} items)`;
+            case 'error': return 'Error occurred';
+            default: return 'Unknown status';
+        }
+    }
+
+    updateProgress(type, current, total, status = null) {
+        if (this.progressTracking[type]) {
+            this.progressTracking[type].current = current;
+            this.progressTracking[type].total = total;
+            if (status) {
+                this.progressTracking[type].status = status;
+            }
+            this.updateProgressDisplay();
+        }
+    }
+
+    setProgressStatus(type, status) {
+        if (this.progressTracking[type]) {
+            this.progressTracking[type].status = status;
+            if (status === 'completed') {
+                this.progressTracking.overall.current++;
+            }
+            this.updateProgressDisplay();
         }
     }
 

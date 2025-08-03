@@ -357,6 +357,64 @@
             <i class="fas fa-spinner fa-spin"></i>
             <h2>Loading your content...</h2>
             <p id="loadingStatus">Connecting to server...</p>
+            
+            <!-- Progress Details -->
+            <div id="progressDetails" class="progress-details" style="display: none;">
+                <!-- Live Channels Progress -->
+                <div class="progress-item" id="liveProgress">
+                    <div class="progress-header">
+                        <span class="progress-label">
+                            <i class="fas fa-tv"></i> Live Channels
+                        </span>
+                        <span class="progress-count" id="liveCount">0 / 0</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="liveProgressFill"></div>
+                    </div>
+                    <div class="progress-status" id="liveStatus">Waiting...</div>
+                </div>
+                
+                <!-- Movies Progress -->
+                <div class="progress-item" id="moviesProgress">
+                    <div class="progress-header">
+                        <span class="progress-label">
+                            <i class="fas fa-film"></i> Movies
+                        </span>
+                        <span class="progress-count" id="moviesCount">0 / 0</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="moviesProgressFill"></div>
+                    </div>
+                    <div class="progress-status" id="moviesStatus">Waiting...</div>
+                </div>
+                
+                <!-- Series Progress -->
+                <div class="progress-item" id="seriesProgress">
+                    <div class="progress-header">
+                        <span class="progress-label">
+                            <i class="fas fa-video"></i> Series
+                        </span>
+                        <span class="progress-count" id="seriesCount">0 / 0</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="seriesProgressFill"></div>
+                    </div>
+                    <div class="progress-status" id="seriesStatus">Waiting...</div>
+                </div>
+                
+                <!-- Overall Progress -->
+                <div class="overall-progress">
+                    <div class="progress-header">
+                        <span class="progress-label">
+                            <i class="fas fa-chart-line"></i> Overall Progress
+                        </span>
+                        <span class="progress-count" id="overallCount">0 / 3</span>
+                    </div>
+                    <div class="progress-bar overall">
+                        <div class="progress-fill" id="overallProgressFill"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
