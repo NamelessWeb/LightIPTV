@@ -2,6 +2,16 @@
 
 A lightweight, browser-based IPTV player designed for optimal performance with large datasets and seamless user experience across devices.
 
+### Quick Setup
+
+1. **Download/Clone** the project files to your local machine or the exe file.
+2. **Open** `index.html` in your web browser or exe file.
+3. **Enter Credentials**:
+   - Server URL (e.g., `http://your-provider.com:8080`)
+   - Username
+   - Password
+4. **Click Connect** to authenticate and load your content
+
 ## Features
 
 ### 🔐 Authentication
