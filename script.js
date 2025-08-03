@@ -1935,7 +1935,10 @@ class LightIPTV {
         const timeoutId = setTimeout(() => controller.abort(), timeout);
         
         try {
-            const response = await fetch(url, {
+            // Use CORS proxy for HTTP requests when site is HTTPS
+            const finalUrl = this.shouldUseProxy(url) ? this.getProxyUrl(url) : url;
+            
+            const response = await fetch(finalUrl, {
                 signal: controller.signal,
                 headers: {
                     'Accept': 'application/json',
@@ -1950,6 +1953,25 @@ class LightIPTV {
             }
             throw error;
         }
+    }
+
+    shouldUseProxy(url) {
+        // Use proxy if current site is HTTPS and target URL is HTTP
+        return window.location.protocol === 'https:' && url.startsWith('http://');
+    }
+
+    getProxyUrl(url) {
+        // Use a reliable CORS proxy service
+        // Alternative proxies: 'https://api.allorigins.win/raw?url=', 'https://cors-anywhere.herokuapp.com/'
+        const proxyServices = [
+            'https://api.codetabs.com/v1/proxy?quest=',
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?'
+        ];
+        
+        // Try different proxy services for reliability
+        const proxyIndex = Math.floor(Math.random() * proxyServices.length);
+        return proxyServices[proxyIndex] + encodeURIComponent(url);
     }
 
     // Theatre Mode Methods
