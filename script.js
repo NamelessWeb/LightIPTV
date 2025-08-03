@@ -1270,6 +1270,13 @@ class LightIPTV {
             
             console.log('Generated stream URL:', streamUrl);
             
+            // Apply CORS proxy to stream URL if needed
+            let finalStreamUrl = streamUrl;
+            if (this.shouldUseProxy(streamUrl)) {
+                finalStreamUrl = this.getProxyUrl(streamUrl);
+                console.log('Using proxied stream URL:', finalStreamUrl);
+            }
+            
             // Clean up previous HLS instance
             if (this.hls) {
                 this.hls.destroy();
@@ -1290,7 +1297,7 @@ class LightIPTV {
                         lowLatencyMode: true,
                         backBufferLength: 90
                     });
-                    this.hls.loadSource(streamUrl);
+                    this.hls.loadSource(finalStreamUrl);
                     this.hls.attachMedia(videoPlayer);
                     
                     this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -1331,7 +1338,7 @@ class LightIPTV {
                     });
                 } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
                     // Safari native HLS support
-                    videoPlayer.src = streamUrl;
+                    videoPlayer.src = finalStreamUrl;
                     try {
                         await videoPlayer.play();
                     } catch (playError) {
@@ -1342,7 +1349,7 @@ class LightIPTV {
                 }
             } else {
                 // Regular video files (Movies/Series)
-                videoPlayer.src = streamUrl;
+                videoPlayer.src = finalStreamUrl;
                 try {
                     await videoPlayer.play();
                 } catch (playError) {
