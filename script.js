@@ -3180,7 +3180,7 @@ class LightIPTV {
             
             console.log('Checking M3U8 playlist for subtitles:', playlistUrl);
             
-            const response = await fetch(playlistUrl);
+            const response = await this.fetchWithTimeout(playlistUrl);
             if (!response.ok) {
                 console.log('Could not fetch M3U8 playlist for subtitle check');
                 return foundCount;
@@ -3303,7 +3303,7 @@ class LightIPTV {
                 // Try base filename with subtitle extension
                 const baseSubUrl = streamUrl.replace(/\.[^.]+$/, `.${ext}`);
                 try {
-                    const response = await fetch(baseSubUrl, { method: 'HEAD' });
+                    const response = await this.fetchWithTimeout(baseSubUrl, 5000);
                     if (response.ok) {
                         console.log(`Found companion subtitle file: ${baseSubUrl}`);
                         const success = await this.downloadProviderSubtitle({
@@ -3322,7 +3322,7 @@ class LightIPTV {
                 for (const lang of languages) {
                     const langSubUrl = streamUrl.replace(/\.[^.]+$/, `.${lang}.${ext}`);
                     try {
-                        const response = await fetch(langSubUrl, { method: 'HEAD' });
+                        const response = await this.fetchWithTimeout(langSubUrl, 5000);
                         if (response.ok) {
                             console.log(`Found language-specific subtitle file: ${langSubUrl}`);
                             const success = await this.downloadProviderSubtitle({
@@ -3421,7 +3421,7 @@ class LightIPTV {
         try {
             console.log('Downloading provider subtitle:', subtitleInfo.name);
             
-            const response = await fetch(subtitleInfo.url);
+            const response = await this.fetchWithTimeout(subtitleInfo.url);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
