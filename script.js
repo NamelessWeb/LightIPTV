@@ -1270,11 +1270,16 @@ class LightIPTV {
             
             console.log('Generated stream URL:', streamUrl);
             
-            // Apply CORS proxy to stream URL if needed
+            // For HLS streams, we cannot use CORS proxy as it breaks segment loading
+            // Instead, we'll try direct loading and handle CORS errors gracefully
             let finalStreamUrl = streamUrl;
-            if (this.shouldUseProxy(streamUrl)) {
+            
+            // Only proxy non-HLS streams (movies/series)
+            if (!streamUrl.includes('.m3u8') && this.shouldUseProxy(streamUrl)) {
                 finalStreamUrl = this.getProxyUrl(streamUrl);
                 console.log('Using proxied stream URL:', finalStreamUrl);
+            } else if (streamUrl.includes('.m3u8')) {
+                console.log('HLS stream detected, using direct URL (CORS may be blocked by browser)');
             }
             
             // Clean up previous HLS instance
@@ -1325,7 +1330,11 @@ class LightIPTV {
                         if (data.fatal) {
                             switch (data.type) {
                                 case Hls.ErrorTypes.NETWORK_ERROR:
-                                    this.showError('Network error: Unable to load stream');
+                                    if (data.details === 'manifestLoadError' && window.location.protocol === 'https:' && streamUrl.startsWith('http:')) {
+                                        this.showError('CORS Error: This IPTV server does not support HTTPS access. The stream cannot be loaded due to browser security restrictions. Try accessing the app via HTTP or contact your IPTV provider.');
+                                    } else {
+                                        this.showError('Network error: Unable to load stream');
+                                    }
                                     break;
                                 case Hls.ErrorTypes.MEDIA_ERROR:
                                     this.showError('Media error: Stream format not supported');
@@ -1483,6 +1492,14 @@ class LightIPTV {
         this.hideAllScreens();
         document.getElementById('loadingScreen').classList.add('active');
         this.updateLoadingStatus(message);
+        
+        // Show CORS warning if on HTTPS
+        const corsWarning = document.getElementById('corsWarning');
+        if (window.location.protocol === 'https:') {
+            corsWarning.style.display = 'block';
+        } else {
+            corsWarning.style.display = 'none';
+        }
         
         const progressDetails = document.getElementById('progressDetails');
         if (showProgress) {

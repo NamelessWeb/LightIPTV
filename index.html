@@ -354,9 +354,15 @@
     <!-- Loading Screen -->
     <div id="loadingScreen" class="screen loading-screen">
         <div class="loading-content">
-            <i class="fas fa-spinner fa-spin"></i>
-            <h2>Loading your content...</h2>
-            <p id="loadingStatus">Connecting to server...</p>
+                <i class="fas fa-spinner fa-spin"></i>
+                <h2>Loading your content...</h2>
+                <p id="loadingStatus">Connecting to server...</p>
+                
+                <!-- CORS Warning -->
+                <div id="corsWarning" class="cors-warning" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p><strong>HTTPS Limitation:</strong> Some IPTV servers may not work on HTTPS sites due to browser security restrictions. If streams fail to load, try accessing this app via HTTP.</p>
+                </div>
             
             <!-- Progress Details -->
             <div id="progressDetails" class="progress-details" style="display: none;">

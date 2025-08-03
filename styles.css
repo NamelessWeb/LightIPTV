@@ -642,6 +642,32 @@ body {
     opacity: 0.8;
 }
 
+/* CORS Warning */
+.cors-warning {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+    color: #ffc107;
+    text-align: left;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cors-warning i {
+    color: #ffc107;
+    margin-right: 8px;
+    font-size: 1rem;
+}
+
+.cors-warning p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
 /* Progress Details */
 .progress-details {
     margin-top: 30px;
